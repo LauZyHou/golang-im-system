@@ -55,15 +55,9 @@ func (this *Server) Start() {
 
 // Handle 连接建立以后的业务回调方法
 func (this *Server) Handle(conn net.Conn) {
-	// 用户上线，创建User并加入到OnlineMap中
-	user := NewUser(conn)
-	// 要添加元素所以要加锁
-	this.mapLock.Lock()
-	this.OnlineMap[user.Name] = user
-	this.mapLock.Unlock()
-
-	// 用户上线成功，广播这条上线消息
-	this.BroadCast(user, "is online")
+	// 用户上线，创建User并调用User的业务方上线处理
+	user := NewUser(conn, this)
+	user.Online()
 
 	// 接收客户端发来的消息
 	go func() {
@@ -72,7 +66,8 @@ func (this *Server) Handle(conn net.Conn) {
 			n, err := conn.Read(buf)
 			// 读取的字节数为0表示客户端合法关闭
 			if n == 0 {
-				this.BroadCast(user, "is offline")
+				// User下线业务
+				user.Offline()
 				return
 			}
 			// err = io.EOF表示到了文件尾
@@ -82,8 +77,8 @@ func (this *Server) Handle(conn net.Conn) {
 			}
 			// 提取用户的消息，去除最后的"\n"
 			msg := string(buf[:n-1])
-			// 将当前用户发送的msg广播
-			this.BroadCast(user, msg)
+			// 处理User发消息的业务
+			user.DoMessage(msg)
 		}
 	}()
 
