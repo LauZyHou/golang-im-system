@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
@@ -63,6 +64,28 @@ func (this *Server) Handle(conn net.Conn) {
 
 	// 用户上线成功，广播这条上线消息
 	this.BroadCast(user, "is online")
+
+	// 接收客户端发来的消息
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, err := conn.Read(buf)
+			// 读取的字节数为0表示客户端合法关闭
+			if n == 0 {
+				this.BroadCast(user, "is offline")
+				return
+			}
+			// err = io.EOF表示到了文件尾
+			if err != nil && err != io.EOF {
+				fmt.Println("[server handle] conn read error:", err)
+				return
+			}
+			// 提取用户的消息，去除最后的"\n"
+			msg := string(buf[:n-1])
+			// 将当前用户发送的msg广播
+			this.BroadCast(user, msg)
+		}
+	}()
 
 	// 让当前go程阻塞，否则子go程都会死掉
 	select {}
