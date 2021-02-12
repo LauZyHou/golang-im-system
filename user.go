@@ -61,8 +61,22 @@ func (this *User) Offline() {
 	this.server.BroadCast(this, "is offline")
 }
 
+// SendMsg 给当前User对应的用户发消息
+// Deprecated: Just use channel this.C
+func (this *User) SendMsg(msg string) {
+	this.conn.Write([]byte(msg))
+}
+
 // DoMessage 处理用户发消息的业务
 func (this *User) DoMessage(msg string) {
-	// 将当前用户发送的msg广播
-	this.server.BroadCast(this, msg)
+	if msg == "who" { // 当前用户查询有哪些用户在线
+		this.server.mapLock.Lock()
+		for _, user := range this.server.OnlineMap {
+			onlineMsg := "[" + user.Addr + "]" + user.Name + "is online"
+			this.C <- onlineMsg
+		}
+		this.server.mapLock.Unlock()
+	} else { // 其它输入，进行消息广播
+		this.server.BroadCast(this, msg)
+	}
 }
