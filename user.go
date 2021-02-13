@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net"
+	"strings"
 )
 
 // User 表达用户在服务器上的实例
@@ -72,10 +74,26 @@ func (this *User) DoMessage(msg string) {
 	if msg == "who" { // 当前用户查询有哪些用户在线
 		this.server.mapLock.Lock()
 		for _, user := range this.server.OnlineMap {
-			onlineMsg := "[" + user.Addr + "]" + user.Name + "is online"
+			onlineMsg := "[" + user.Addr + "]" + user.Name + " is online."
 			this.C <- onlineMsg
 		}
 		this.server.mapLock.Unlock()
+	} else if len(msg) > 7 && msg[:7] == "rename|" { // 修改用户名
+		// 截取要修改到的新用户名
+		newName := strings.Split(msg, "|")[1]
+		// 判断newName是否已经被用户占用了
+		_, ok := this.server.OnlineMap[newName]
+		if ok {
+			this.C <- "The new name has been used."
+		} else {
+			this.server.mapLock.Lock()
+			delete(this.server.OnlineMap, this.Name)
+			this.server.OnlineMap[newName] = this
+			this.server.mapLock.Unlock()
+
+			this.Name = newName
+			this.C <- fmt.Sprintf("Update user name to %v.", newName)
+		}
 	} else { // 其它输入，进行消息广播
 		this.server.BroadCast(this, msg)
 	}
