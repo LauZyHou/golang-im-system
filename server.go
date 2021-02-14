@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"runtime"
 	"sync"
+	"time"
 )
 
 // Server 服务器
@@ -59,6 +61,9 @@ func (this *Server) Handle(conn net.Conn) {
 	user := NewUser(conn, this)
 	user.Online()
 
+	// 监听用户是否活跃的channel
+	isLive := make(chan bool)
+
 	// 接收客户端发来的消息
 	go func() {
 		buf := make([]byte, 4096)
@@ -79,11 +84,30 @@ func (this *Server) Handle(conn net.Conn) {
 			msg := string(buf[:n-1])
 			// 处理User发消息的业务
 			user.DoMessage(msg)
+
+			// 读到用户的任意消息，接收到认为用户是活跃的
+			isLive <- true
 		}
 	}()
 
-	// 让当前go程阻塞，否则子go程都会死掉
-	select {}
+	for {
+		select {
+		// 读到用户活跃消息，重置定时器
+		case <-isLive:
+			//time.After(time.Second * 10)
+			// 这里不用显式调一下，case进来之后还是会去匹配下面的case，然后就更新了定时器
+		// 十秒超时，将当前用户强制下线
+		case <-time.After(time.Second * 10):
+			// 发踢出去的消息
+			user.C <- "You will be offline."
+			// 销毁channel资源
+			close(user.C)
+			// 关闭连接
+			conn.Close()
+			// 退出当前的handler
+			runtime.Goexit() // return也行
+		}
+	}
 }
 
 // BroadCast 向所有User广播消息的方法
