@@ -94,10 +94,10 @@ func (this *Server) Handle(conn net.Conn) {
 		select {
 		// 读到用户活跃消息，重置定时器
 		case <-isLive:
-			//time.After(time.Second * 10)
+			//time.After(time.Second * 300)
 			// 这里不用显式调一下，case进来之后还是会去匹配下面的case，然后就更新了定时器
-		// 十秒超时，将当前用户强制下线
-		case <-time.After(time.Second * 10):
+		// 5分钟超时，将当前用户强制下线
+		case <-time.After(time.Second * 300):
 			// 发踢出去的消息
 			user.C <- "You will be offline."
 			// 销毁channel资源

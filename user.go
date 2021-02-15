@@ -94,6 +94,27 @@ func (this *User) DoMessage(msg string) {
 			this.Name = newName
 			this.C <- fmt.Sprintf("Update user name to %v.", newName)
 		}
+	} else if len(msg) > 4 && msg[:3] == "to|" { // to|name|私聊消息
+		spList := strings.Split(msg, "|")
+		if len(spList) != 3 {
+			this.C <- "Msg format error, please use to|name|content"
+			return
+		}
+
+		recvName := spList[1]
+		recvUser, ok := this.server.OnlineMap[recvName]
+		if !ok {
+			this.C <- fmt.Sprintf("User %v is not exist.", recvName)
+			return
+		}
+
+		msgContent := spList[2]
+		if msgContent == "" {
+			this.C <- "Msg is empty."
+			return
+		}
+
+		recvUser.C <- fmt.Sprintf("%v say: %v", this.Name, msgContent)
 	} else { // 其它输入，进行消息广播
 		this.server.BroadCast(this, msg)
 	}
