@@ -17,7 +17,7 @@ build.bat
 Firstly, start the server:
 
 ```bash
-im.exe
+server.exe
 ```
 
 Link to server in windows shell:
@@ -28,4 +28,8 @@ nc 127.0.0.1 8888
 
 Repeat it. You can mock multi user online.
 
+Or use client:
 
+```bash
+client.exe
+```
