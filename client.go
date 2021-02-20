@@ -6,11 +6,13 @@ import (
 	"net"
 )
 
+// Client 客户端
 type Client struct {
-	ServerIp   string
-	ServerPort int
-	Name       string
-	conn       net.Conn
+	ServerIp   string   // 对端服务器ip
+	ServerPort int      // 对端服务器端口
+	Name       string   // 用户名
+	conn       net.Conn // 和对端服务器建立的连接句柄
+	flag       int      // 当前用户从菜单选择的操作模式
 }
 
 func NewClient(serverIp string, serverPort int) *Client {
@@ -18,6 +20,7 @@ func NewClient(serverIp string, serverPort int) *Client {
 	client := &Client{
 		ServerIp:   serverIp,
 		ServerPort: serverPort,
+		flag:       999, // 默认值不为0是因为0表示退出
 	}
 
 	// 连接Server
@@ -30,6 +33,46 @@ func NewClient(serverIp string, serverPort int) *Client {
 	client.conn = conn
 
 	return client
+}
+
+// menu 打印菜单
+func (this *Client) menu() bool {
+	fmt.Println("1. Public chat")
+	fmt.Println("2. Secret chat")
+	fmt.Println("3. Rename")
+	fmt.Println("0. Exit")
+
+	var flag int
+	fmt.Scanln(&flag)
+	if flag >= 0 && flag <= 3 {
+		this.flag = flag
+		return true
+	} else {
+		fmt.Println("Undefined input flag")
+		return false
+	}
+}
+
+// Run 是 Client 主业务
+func (this *Client) Run() {
+	// =0时才退出
+	for this.flag != 0 {
+		// 输入不是合法数字就一直菜单提示用户输入
+		for this.menu() != true {
+		}
+		// 根据不同模式处理不同业务
+		switch this.flag {
+		case 1:
+			// 公聊
+			fmt.Println("Public chat mod")
+		case 2:
+			//私聊
+			fmt.Println("Secret chat mod")
+		case 3:
+			// 改名
+			fmt.Println("Rename")
+		}
+	}
 }
 
 // 从命令行中解析的服务器ip和端口存在这里
@@ -55,5 +98,5 @@ func main() {
 	fmt.Println("Link server success.")
 
 	// 启动客户端的业务
-	select {}
+	client.Run()
 }
