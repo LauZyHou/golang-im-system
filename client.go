@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 // Client 客户端
@@ -35,6 +37,13 @@ func NewClient(serverIp string, serverPort int) *Client {
 	return client
 }
 
+// DealResponse 是用来处理Server回应的消息的goroutine
+func (this *Client) DealResponse() {
+	// 只要从this.conn里Read到东西就从os.Stdout打印出来，永久阻塞监听
+	// 手动写一个for来不停conn.Read+fmt.Println处理也可以
+	io.Copy(os.Stdout, this.conn)
+}
+
 // menu 打印菜单
 func (this *Client) menu() bool {
 	fmt.Println("1. Public chat")
@@ -51,6 +60,20 @@ func (this *Client) menu() bool {
 		fmt.Println("Undefined input flag")
 		return false
 	}
+}
+
+// UpdateName update current user name
+func (this *Client) UpdateName() bool {
+	fmt.Println("Please input user name")
+	fmt.Scanln(&this.Name)
+
+	sendMsg := fmt.Sprintf("rename|%v\n", this.Name)
+	_, err := this.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("conn.Write error: ", err)
+		return false
+	}
+	return true
 }
 
 // Run 是 Client 主业务
@@ -70,7 +93,7 @@ func (this *Client) Run() {
 			fmt.Println("Secret chat mod")
 		case 3:
 			// 改名
-			fmt.Println("Rename")
+			this.UpdateName()
 		}
 	}
 }
@@ -96,6 +119,9 @@ func main() {
 		return
 	}
 	fmt.Println("Link server success.")
+
+	// 单独开一个go程处理go回执的消息，不影响Run
+	go client.DealResponse()
 
 	// 启动客户端的业务
 	client.Run()
