@@ -62,6 +62,30 @@ func (this *Client) menu() bool {
 	}
 }
 
+// PublicChat 公聊模式业务
+func (this *Client) PublicChat() {
+	// 提示用户输入消息
+	fmt.Println("Please input chat content, \"exit\" to exit.")
+	var chatMsg string
+	fmt.Scanln(&chatMsg)
+
+	for chatMsg != "exit" {
+		// 消息不为空则发给服务器
+		if len(chatMsg) != 0 {
+			sendMsg := chatMsg + "\n"
+			_, err := this.conn.Write([]byte(sendMsg))
+			if err != nil {
+				fmt.Println("conn.Write error: ", err)
+				break
+			}
+		}
+		// 发完一轮发下一轮，也是提示+等待输入
+		chatMsg = ""
+		fmt.Println("Please input chat content, \"exit\" to exit.")
+		fmt.Scanln(&chatMsg)
+	}
+}
+
 // UpdateName update current user name
 func (this *Client) UpdateName() bool {
 	fmt.Println("Please input user name")
@@ -87,7 +111,7 @@ func (this *Client) Run() {
 		switch this.flag {
 		case 1:
 			// 公聊
-			fmt.Println("Public chat mod")
+			this.PublicChat()
 		case 2:
 			//私聊
 			fmt.Println("Secret chat mod")
