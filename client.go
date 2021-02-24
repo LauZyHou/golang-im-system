@@ -62,6 +62,54 @@ func (this *Client) menu() bool {
 	}
 }
 
+// SelectUsers 查询在线用户
+func (this *Client) SelectUsers() {
+	// 发一个who指令过去，回执由回执处理的goroutine处理并打印出来
+	sendMsg := "who\n"
+	_, err := this.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("conn.Write error: ", err)
+		return
+	}
+}
+
+// PrivateChat 私聊模式业务
+func (this *Client) PrivateChat() {
+	var remoteName string
+	var chatMsg string
+
+	// 先查询当前用户
+	this.SelectUsers()
+	// 用户输入要通信的用户名
+	fmt.Println("Please input recv user name. \"exit\" to exit.")
+	fmt.Scanln(&remoteName)
+
+	for remoteName != "exit" {
+		// 用户输入私聊消息内容
+		fmt.Println("Please input chat content. \"exit\" to exit.")
+		fmt.Scanln(&chatMsg)
+
+		for chatMsg != "exit" {
+			if len(chatMsg) != 0 {
+				sendMsg := fmt.Sprintf("to|%v|%v\n", remoteName, chatMsg)
+				_, err := this.conn.Write([]byte(sendMsg))
+				if err != nil {
+					fmt.Println("conn.Write error: ", err)
+					break
+				}
+			}
+
+			chatMsg = ""
+			fmt.Println("Please input chat content. \"exit\" to exit.")
+			fmt.Scanln(&chatMsg)
+		}
+
+		this.SelectUsers()
+		fmt.Println("Please input recv user name. \"exit\" to exit.")
+		fmt.Scanln(&remoteName)
+	}
+}
+
 // PublicChat 公聊模式业务
 func (this *Client) PublicChat() {
 	// 提示用户输入消息
@@ -114,7 +162,7 @@ func (this *Client) Run() {
 			this.PublicChat()
 		case 2:
 			//私聊
-			fmt.Println("Secret chat mod")
+			this.PrivateChat()
 		case 3:
 			// 改名
 			this.UpdateName()
