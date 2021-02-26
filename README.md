@@ -2,6 +2,9 @@
 
 A simple golang instant message system.
 
+## Architecture
+![go-im-sys](https://raw.githubusercontent.com/LauZyHou/pic/master/go-im-sys/architecture.png)
+
 ## Build
 
 ### Windows
