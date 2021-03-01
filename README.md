@@ -31,7 +31,7 @@ nc 127.0.0.1 8888
 
 Repeat it. You can mock multi user online.
 
-To client, you can get help from:
+To use client, you can get some help:
 
 ```bash
 client -h
